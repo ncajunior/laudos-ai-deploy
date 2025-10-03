@@ -92,3 +92,36 @@ def api_gerar_laudo(tombamento: int):
         return {'ok': True, 'path': pdf_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post('/api/validar/{tombamento}')
+def api_validar(tombamento: int):
+    """Runs a set of spatial and attribute validations for the given tombamento.
+    Results are attempted to be recorded in imoveis.validation_log if database is available.
+    """
+    try:
+        from . import validators
+    except Exception:
+        # fallback import for script context
+        import validators
+
+    results = {}
+    try:
+        results['centroid'] = validators.check_centroid_exists_and_within_muni(tombamento)
+    except Exception as e:
+        results['centroid_error'] = str(e)
+
+    try:
+        results['required_fields'] = validators.check_required_fields(tombamento)
+    except Exception as e:
+        results['required_fields_error'] = str(e)
+
+    # try to record to DB; if DB isn't available, skip silently
+    try:
+        validators.record_validation_log(tombamento, results)
+        results['logged'] = True
+    except Exception as e:
+        results['logged'] = False
+        results['log_error'] = str(e)
+
+    return {'ok': True, 'results': results}
