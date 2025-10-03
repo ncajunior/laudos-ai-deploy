@@ -6,7 +6,28 @@ from typing import Dict, Any
 DB = os.getenv('DATABASE_URL')
 
 
+def _load_dotenv(path: str = '/app/.env'):
+    try:
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                for ln in f:
+                    ln = ln.strip()
+                    if not ln or ln.startswith('#'):
+                        continue
+                    if '=' not in ln:
+                        continue
+                    k, v = ln.split('=', 1)
+                    if k.strip() == 'DATABASE_URL' and not os.getenv('DATABASE_URL'):
+                        return v.strip().strip('"').strip("'")
+    except Exception:
+        pass
+    return None
+
+
 def _connect():
+    global DB
+    if not DB:
+        DB = _load_dotenv()
     if not DB:
         raise RuntimeError('DATABASE_URL not set')
     return psycopg2.connect(DB)
