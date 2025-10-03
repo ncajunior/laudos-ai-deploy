@@ -30,7 +30,24 @@ def _connect():
         DB = _load_dotenv()
     if not DB:
         raise RuntimeError('DATABASE_URL not set')
-    return psycopg2.connect(DB)
+    try:
+        conn = psycopg2.connect(DB)
+        try:
+            conn.set_client_encoding('UTF8')
+        except Exception:
+            pass
+        return conn
+    except Exception:
+        # Try with SSL if the server requires it
+        try:
+            conn = psycopg2.connect(DB, sslmode='require')
+            try:
+                conn.set_client_encoding('UTF8')
+            except Exception:
+                pass
+            return conn
+        except Exception as e:
+            raise
 
 
 def check_centroid_exists_and_within_muni(tombamento: int) -> Dict[str, Any]:
