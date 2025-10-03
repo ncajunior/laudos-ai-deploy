@@ -1,4 +1,5 @@
 import os
+import sys
 import psycopg2
 import psycopg2.extras
 from typing import Dict, Any
@@ -30,24 +31,24 @@ def _connect():
         DB = _load_dotenv()
     if not DB:
         raise RuntimeError('DATABASE_URL not set')
-    try:
-        conn = psycopg2.connect(DB)
+    # Try connection strategies: disable SSL, default, require SSL
+    for sslmode in ('disable', None, 'require'):
         try:
-            conn.set_client_encoding('UTF8')
-        except Exception:
-            pass
-        return conn
-    except Exception:
-        # Try with SSL if the server requires it
-        try:
-            conn = psycopg2.connect(DB, sslmode='require')
+            if sslmode is None:
+                conn = psycopg2.connect(DB)
+            else:
+                conn = psycopg2.connect(DB, sslmode=sslmode)
             try:
                 conn.set_client_encoding('UTF8')
             except Exception:
                 pass
             return conn
-        except Exception as e:
-            raise
+        except Exception:
+            last_exc = sys.exc_info()[1]
+            # continue to next strategy
+            continue
+    # If we reach here, raise the last exception
+    raise last_exc
 
 
 def check_centroid_exists_and_within_muni(tombamento: int) -> Dict[str, Any]:
