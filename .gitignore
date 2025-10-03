@@ -7,3 +7,4 @@ laudos/
 venv/
 node_modules/
 *.log
+secrets/
