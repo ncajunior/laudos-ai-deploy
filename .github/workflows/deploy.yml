@@ -1,0 +1,12 @@
+name: Deploy Laudos
+on: push: branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy
+        run: |
+          echo "${{ secrets.SSH_KEY }}" > key && chmod 600 key
+          scp -i key -r . ${{ secrets.USER }}@${{ secrets.HOST }}:/home/${{ secrets.USER }}/laudos-api
+          ssh -i key ${{ secrets.USER }}@${{ secrets.HOST }} 'cd laudos-api && docker-compose up -d'

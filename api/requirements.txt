@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+psycopg2-binary
+sqlalchemy
+pandas
+geopandas
+pyproj
+leafmap
+reportlab
+PyPDF2
+qrcode
+requests
+pydantic
+openai
+Pillow
